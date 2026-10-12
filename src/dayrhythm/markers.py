@@ -31,6 +31,9 @@ class MarkerSpec:
 
     # What kind of value the marker holds: "time" (minutes after midnight), "count", "duration".
     value_type: str = "time"
+    # Highest severity this marker may raise on its own. Optional habits (a morning walk) are
+    # worth noting but should never trigger a check-in by themselves.
+    cap: str = "concern"
 
     def matches(self, ev: Event) -> bool:
         return (self.zones is None or ev.zone in self.zones) and (self.kinds is None or ev.kind in self.kinds)
@@ -112,7 +115,7 @@ def default_specs() -> list[MarkerSpec]:
     return [
         FirstEvent("wake", "first movement of the morning", (240, 840)),
         FirstEvent("first_kitchen", "kitchen activity", (240, 840), zones=frozenset({"kitchen"})),
-        FirstEvent("first_door", "front door opening", (240, 1200), zones=frozenset({"front_door"}), kinds=frozenset({"contact_open"})),
+        FirstEvent("first_door", "front door opening", (240, 1200), zones=frozenset({"front_door"}), kinds=frozenset({"contact_open"}), cap="watch"),
         CountEpisodes("night_trips", "night-time trips", (-60, 300)),
         LongestGap("quiet_daytime", "quiet spell", (480, 1260), kinds=frozenset({"motion", "contact_open", "contact_close"})),
         LastEvent("last_activity", "last activity of the evening", (1080, 1560)),

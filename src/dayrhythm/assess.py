@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 
 from .baseline import Baseline, MarkerStats
 from .markers import CountEpisodes, CountEvents, DayMarkers, FirstEvent, LastEvent, LongestGap, MarkerSpec
-from .timefmt import clock, duration
+from .timefmt import clock as _clock, duration
+
+_twelve_hour: ContextVar[bool] = ContextVar("dayrhythm_twelve_hour", default=False)
+
+
+def clock(minutes: float | None) -> str:
+    return _clock(minutes, _twelve_hour.get())
+
 
 SEVERITY_ORDER = {"ok": 0, "info": 1, "watch": 2, "concern": 3}
 
@@ -150,9 +158,18 @@ def _count(spec, st, value, complete, t) -> Finding | None:
     return None
 
 
-def assess(today: DayMarkers, baseline: Baseline, now_min: float | None = None, thresholds: Thresholds | None = None) -> Assessment:
-    """`now_min` is minutes after midnight of `today.day` (may exceed 1440 after midnight)."""
-    t = thresholds or Thresholds()
+def assess(today: DayMarkers, baseline: Baseline, now_min: float | None = None, thresholds: Thresholds | None = None,
+           time_format: str = "24h") -> Assessment:
+    """`now_min` is minutes after midnight of `today.day` (may exceed 1440 after midnight).
+    `time_format` is "24h" ('08:10') or "12h" ('8:10 AM') for the explanations."""
+    token = _twelve_hour.set(time_format == "12h")
+    try:
+        return _assess(today, baseline, now_min, thresholds or Thresholds())
+    finally:
+        _twelve_hour.reset(token)
+
+
+def _assess(today: DayMarkers, baseline: Baseline, now_min: float | None, t: Thresholds) -> Assessment:
     result = Assessment(severity="ok", learning=not baseline.ready, days_of_history=baseline.n_days)
     for spec in baseline.specs:
         st = baseline.get(spec.name)
@@ -173,6 +190,8 @@ def assess(today: DayMarkers, baseline: Baseline, now_min: float | None = None, 
             finding = _count(spec, st, value, complete, t)
         else:
             finding = None
+        if finding and SEVERITY_ORDER[finding.severity] > SEVERITY_ORDER.get(spec.cap, 3):
+            finding.severity = spec.cap
         status = finding.severity if finding else ("pending" if value is None and not complete else "ok")
         result.markers.append(MarkerView(spec.name, spec.label, spec.value_type, value, st.median, st.spread, status, complete))
         if finding:
