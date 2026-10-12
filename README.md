@@ -43,7 +43,7 @@ result.markers       # today vs usual for each marker, ready to chart
 
 | Marker | Meaning | Window |
 |---|---|---|
-| `wake` | first movement of the morning | 04:00 to 14:00 |
+| `wake` | first movement of the morning ("morning movement") | 04:00 to 14:00 |
 | `first_kitchen` | first kitchen motion | 04:00 to 14:00 |
 | `first_door` | first front-door opening (contact sensor) | 04:00 to 20:00 |
 | `night_trips` | separate night-time movement episodes (events within 15 min merge) | 23:00 to 05:00 |

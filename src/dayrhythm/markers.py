@@ -113,7 +113,7 @@ class DayMarkers:
 def default_specs() -> list[MarkerSpec]:
     """Markers that work with a few motion detectors and a front-door contact sensor."""
     return [
-        FirstEvent("wake", "first movement of the morning", (240, 840)),
+        FirstEvent("wake", "morning movement", (240, 840)),
         FirstEvent("first_kitchen", "kitchen activity", (240, 840), zones=frozenset({"kitchen"})),
         FirstEvent("first_door", "front door opening", (240, 1200), zones=frozenset({"front_door"}), kinds=frozenset({"contact_open"}), cap="watch"),
         CountEpisodes("night_trips", "night-time trips", (-60, 300)),
